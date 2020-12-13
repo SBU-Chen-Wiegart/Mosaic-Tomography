@@ -100,7 +100,7 @@ x_shift1 = 0
 x_shift2 = 0
 y_shift1 = 0
 y_shift2 = 0
-x_pc_shift = 4
+x_pc_shift = 0
 
 pixel_size = 40 #nm
 x_dim = int((max(x_stage)-min(x_stage))*1000/pixel_size/add_bin+h_size) + (x_shift1+x_shift2)*3 + x_pc_shift*2
