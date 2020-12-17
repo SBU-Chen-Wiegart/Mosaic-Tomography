@@ -19,13 +19,13 @@ from scipy.signal import find_peaks
 # plt.close('all')
 
 '''
-Read fly scan files from h5 format
-'''
-fly_dir = '/media/karenchen-wiegart/hard_disk/65344_65391_CNT/'
-recon_dir = '/media/karenchen-wiegart/hard_disk/65344_65391_CNT/binning/'
+    Read fly scan files from h5 format
+    '''
+fly_dir = '/NSLS2/xf18id1/users/2020Q3/KAREN_Proposal_305052/'
+recon_dir = '/NSLS2/xf18id1/users/2020Q3/KAREN_Proposal_305052/79844_79927_bin4/'
 # recon_dir = '/home/karenchen-wiegart/ChenWiegartgroup/CHLin/20200818_FXI/65286_65339_SuperP/recon_FBP_CUDA_parzen_bin2/'
-scan_start = 65344
-scan_end = 65391
+scan_start = 79844
+scan_end = 79927
 fn = fly_dir + f'fly_scan_id_{scan_start}.h5'
 h5 = h5py.File(fn, 'r')
 # print(list(h5.keys()))
@@ -46,13 +46,13 @@ z_stage = []
 i=0
 for scan_ID in range(scan_start, scan_end+1):
     fn = fly_dir + f'fly_scan_id_{scan_ID}.h5'
-    h5 = h5py.File(fn, 'r')    
-    # x = np.float32(h5['x_ini'])
-    # y = np.float32(h5['y_ini'])
-    # z = np.float32(h5['z_ini'])
-    x = np.round(np.float32(h5['x_ini']))
-    y = np.round(np.float32(h5['y_ini']))
-    z = np.round(np.float32(h5['z_ini']))
+    h5 = h5py.File(fn, 'r')
+    x = np.float32(h5['x_ini'])
+    y = np.float32(h5['y_ini'])
+    z = np.float32(h5['z_ini'])
+    #    x = np.round(np.float32(h5['x_ini']))
+    #    y = np.round(np.float32(h5['y_ini']))
+    #    z = np.round(np.float32(h5['z_ini']))
     x_stage.append(x)
     y_stage.append(y)
     z_stage.append(z)
@@ -73,10 +73,10 @@ for scan_ID in range(scan_start, scan_end+1):
 add_bin = 4 #total bin = 2*add_bin
 h_FOV = int(1280/add_bin)
 v_FOV = int(1080/add_bin)
-h_mosaicstep = 750 # bin2 (mosaic step size is the center-to-center distance)
-v_mosaicstep = 750 # bin2 (750 for CB, 125 CNT )
+h_mosaicstep = 905 # bin2; x in projection (mosaic step size is the center-to-center distance)
+v_mosaicstep = 764 # bin2; y in projection (750 for CB, 125 CNT )
 d_FOV = int(1280/add_bin)
-depth = 125
+depth = 905   # z in projection
 
 h_size = int(h_mosaicstep/add_bin)
 v_size = int(v_mosaicstep/add_bin)
@@ -110,9 +110,9 @@ z_dim = int((max(y_stage)-min(y_stage))*1000/pixel_size/add_bin+v_size)
 stitch=np.zeros([z_dim, y_dim, x_dim])
 #stitch_all = np.zeros([z_size*v_FOV, y_size*h_FOV, x_size*h_FOV])
 
-h_motorstep = 30 # in um
-v_motorstep = 30 # in um
-
+h_motorstep = 36.204 # in um, x in projection
+v_motorstep = 36.204 # in um, z in projection
+d_motorstep = 30.547 # in um, y in projection
 
 single_dir = recon_dir + 'z[100]/'
 i=0
@@ -120,7 +120,7 @@ for scan_ID in range(scan_start, scan_end+1):
     fn = recon_dir + f'recon_scan_{scan_ID}_bin{add_bin}.h5'
     h5 = h5py.File(fn, 'r')
     # print(scan_ID)
-
+    
     # img = io.imread(fn)
     img = np.array(h5['img'])
     img = np.flip(img, axis=1)
@@ -129,18 +129,18 @@ for scan_ID in range(scan_start, scan_end+1):
     ### Define pc = pixel center ###
     # x_pc = int((x_stage[i]-min(x_stage))*1000/pixel_size/add_bin)
     # y_pc = int((z_stage[i]-min(z_stage))*1000/pixel_size/add_bin)
-    # z_pc = int((y_stage[i]-min(y_stage))*1000/pixel_size/add_bin)  
+    # z_pc = int((y_stage[i]-min(y_stage))*1000/pixel_size/add_bin)
     # stitch[z_pc : z_pc+2*v_w+1, y_pc : y_pc+2*h_w+1, x_pc : (x_pc+2*h_w+1)] = img[v_cen-v_w:v_cen+v_w+1, h_cen-h_w:h_cen+h_w+1, h_cen-h_w:h_cen+h_w+1]
     # stitch[z_pc : z_pc+2*v_w, y_pc : y_pc+2*h_w, x_pc : (x_pc+2*h_w)] = img[v_cen-v_w:v_cen+v_w, h_cen-h_w:h_cen+h_w, h_cen-h_w:h_cen+h_w]
     
     img_slice = img[v_cen-v_w:v_cen+v_w, h_cen-h_w-y_shift1:h_cen+h_w+y_shift2, h_cen-h_w-x_shift1:h_cen+h_w+x_shift2]
     x_slice = img_slice.shape[2]
-    y_slice = img_slice.shape[1] 
+    y_slice = img_slice.shape[1]
     z_slice = img_slice.shape[0]
     
     x_pc = int((x_stage[i]-min(x_stage))*x_slice/h_motorstep)
     y_pc = int((z_stage[i]-min(z_stage))*y_slice/v_motorstep)
-    z_pc = int((y_stage[i]-min(y_stage))*z_slice/h_motorstep)
+    z_pc = int((y_stage[i]-min(y_stage))*z_slice/d_motorstep)
     
     if y_pc == 0: x_pc = x_pc + x_pc_shift*2
     elif (0 < y_pc and y_pc < 300): x_pc = x_pc + x_pc_shift
@@ -157,17 +157,17 @@ for scan_ID in range(scan_start, scan_end+1):
     # print (f'{scan_ID}, {img_slice.shape}, {stitch_slice.shape}')
     i=i+1
     h5.close()
-    
-    # fout = single_dir + f'{scan_ID}_z[100].tiff'+++++
-    # io.imsave(fout, np.float32(img[100, h_cen-h_w:h_cen+h_w, h_cen-h_w:h_cen+h_w]))
 
-fout  = recon_dir + 'stitch_motor_04_pc.tiff' 
+# fout = single_dir + f'{scan_ID}_z[100].tiff'+++++
+# io.imsave(fout, np.float32(img[100, h_cen-h_w:h_cen+h_w, h_cen-h_w:h_cen+h_w]))
+
+fout  = recon_dir + f'stitch_motor_{scan_start}_02_pc.tiff'
 io.imsave(fout, np.float32(stitch))
 
 
 '''
-Non-overlapped
-'''
+    Non-overlapped
+    '''
 # recon_xy = np.zeros([row*col, h_FOV, h_FOV])
 # for i in range (row*col):
 #     x1 = 0 + (i%row)*h_FOV
@@ -177,5 +177,6 @@ Non-overlapped
 #     recon_xy[i] = stitch[0][y1:y2, x1:x2]
 #     print(f'{x1}:{x2} and {y1}:{y2}')
 
-# fout  = recon_dir + 'recon_xy_z[0].tiff' 
-# io.imsave(fout, np.float32(recon_xy))
+# fout  = recon_dir + 'recon_xy_z[0].tiff'
+# io.imsave(fout, np.float32(recon_xy)
+
